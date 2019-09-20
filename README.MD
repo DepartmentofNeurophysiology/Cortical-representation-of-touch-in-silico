@@ -15,7 +15,7 @@ A simple example simulation can be run by executing the script quick_example, wh
 
 ## Input
 
-As input, data files (whisker base angle and curvature) of the lab Karel Svoboda were used (publicly available on Data Sets — CRCNS.org). The specified whisker data files are expected to be present in folder ‘Input data’. The function ‘make_thalamic_spike_trains_svoboda_recordings’ in folder ‘Make_New_Thinput’ makes spike trains from the whisker data. For the use of any other input, make a file similar to this example. 
+As input, data files (whisker base angle and curvature) of the lab Karel Svoboda were used (publicly available on Data Sets — CRCNS.org). The specified whisker data files are expected to be present in folder ‘Input data’, the example is written for file 'an171923_2012_06_04_data_struct.mat'. However, the file is too large to upload here. The function ‘make_thalamic_spike_trains_svoboda_recordings’ in folder ‘Make_New_Thinput’ makes spike trains from the whisker data. For the use of any other input, make a file similar to this example. 
 
 ## Simulation
 
