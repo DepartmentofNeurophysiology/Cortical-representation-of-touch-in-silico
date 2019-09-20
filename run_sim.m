@@ -9,7 +9,7 @@ savefolder = ['Simulation_results' f savename '_data' f];
 %% Specific settings thalamic input fromSvoboda data
 if make_new_thalamic_input
     % What whisker data to use; here specific for Svoboda data
-    SvobodaStruct.loadfolder = ['..' f 'Input data' f];         % folder where input data are stored
+    SvobodaStruct.loadfolder = ['Input data' f];                % folder where input data are stored
     SvobodaStruct.animal = 'an171923';                          % animal ID
     SvobodaStruct.sessionvec = {'2012_06_04'};                  % which sessions to load
     SvobodaStruct.dataname = 'data_struct';                     % addition on file names
