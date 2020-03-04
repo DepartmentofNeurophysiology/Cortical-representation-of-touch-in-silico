@@ -41,6 +41,8 @@ f = filesep;
         WhiskerTrace.Recording{2,nt} = squeeze(whiskermat(2,:,trialvec(nt)));           % curvature
     end
     WhiskerTrace.binsize = binsize_whisker; % ms
+    WhiskerTrace.quantity = {'base_angle','curvature'};                                 % See Whisker_Recording class for recognized quantities and units
+    WhiskerTrace.unit = {'radian','mm-1'};
     
     %% Make / load kernels
     if make_new_thalamic_kernels

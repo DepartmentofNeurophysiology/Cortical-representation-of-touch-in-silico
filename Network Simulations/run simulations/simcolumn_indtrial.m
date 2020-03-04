@@ -1,4 +1,4 @@
-function simcolumn_indtrial(Data, initdata, simdata, inputspikes, seeds, WhPara, varargin)
+function ConData = simcolumn_indtrial(ConData, initdata, simdata, inputspikes, seeds, WhPara, varargin)
 % Simcolumn_indtrial 
 % * runs single trial simulation (needed: 
 % * sets for this trial initial Vr, Vt dynamic threshold, V and u
@@ -35,28 +35,28 @@ function simcolumn_indtrial(Data, initdata, simdata, inputspikes, seeds, WhPara,
 
 
 %% neuronal model parameters
-a=Data.Neuron_Para(:,1);
-b=Data.Neuron_Para(:,2);
+a=ConData.Neuron_Para(:,1);
+b=ConData.Neuron_Para(:,2);
 % b(Data.Cellinfo_All(:,4)>5) = b(Data.Cellinfo_All(:,4)>5) + 0.3;
-b(Data.Cellinfo_All(:,4)==5) = b(Data.Cellinfo_All(:,4)==5) - 0.15;
-c=Data.Neuron_Para(:,3);
-d=Data.Neuron_Para(:,4);
-d(Data.Cellinfo_All(:,4)>5) = d(Data.Cellinfo_All(:,4)>5) + 2;
+b(ConData.Cellinfo_All(:,4)==5) = b(ConData.Cellinfo_All(:,4)==5) - 0.15;
+c=ConData.Neuron_Para(:,3);
+d=ConData.Neuron_Para(:,4);
+d(ConData.Cellinfo_All(:,4)>5) = d(ConData.Cellinfo_All(:,4)>5) + 2;
 
 Tau_plas = 120; % time constant for short term synaptic dynamics in ms; 
 
 % parameters for dynamic threshold model
-DynThresMat = nan*ones(Data.NAll, 6);
+DynThresMat = nan*ones(ConData.NAll, 6);
 if initdata.Vthresdyn == 1
-    for nt = 1:length(Data.NtAll)
-        cells = find(Data.Cellinfo_All(:,4)==nt);
+    for nt = 1:length(ConData.NtAll)
+        cells = find(ConData.Cellinfo_All(:,4)==nt);
         ncells = length(cells);
-        DynThresMat(cells,1) = Data.Neuron_Vt.alpha(nt) *ones(ncells,1);
-        DynThresMat(cells,2) = Data.Neuron_Vt.Vi(nt)    *ones(ncells,1);
-        DynThresMat(cells,3) = Data.Neuron_Vt.Vmin(nt)  *ones(ncells,1);
-        DynThresMat(cells,4) = Data.Neuron_Vt.Ka(nt)    *ones(ncells,1);
-        DynThresMat(cells,5) = Data.Neuron_Vt.Ki(nt)    *ones(ncells,1);
-        DynThresMat(cells,6) = Data.Neuron_Vt.tau(nt)   *ones(ncells,1);
+        DynThresMat(cells,1) = ConData.Neuron_Vt.alpha(nt) *ones(ncells,1);
+        DynThresMat(cells,2) = ConData.Neuron_Vt.Vi(nt)    *ones(ncells,1);
+        DynThresMat(cells,3) = ConData.Neuron_Vt.Vmin(nt)  *ones(ncells,1);
+        DynThresMat(cells,4) = ConData.Neuron_Vt.Ka(nt)    *ones(ncells,1);
+        DynThresMat(cells,5) = ConData.Neuron_Vt.Ki(nt)    *ones(ncells,1);
+        DynThresMat(cells,6) = ConData.Neuron_Vt.tau(nt)   *ones(ncells,1);
     end
 end
 
@@ -69,7 +69,7 @@ Nsim = simLen/step;
 % the membrane potential of L2/3 neurons is directly modulated by whisking
 % (Crochet et al, Neuron 2011)
 % * model: Data.WhiskModel made in 'reorganize_conmat'
-% * data: structure WhPara with base-angles, amplitudes and phase of the whiskers
+% * data: structure WhPara with base-angles (degrees), amplitudes and phase of the whiskers
 % Assumptions:
 % * Whisker angle correlated inputs to L2/3 population; 
 % * not all neurons are modulated by whisking 
@@ -78,31 +78,36 @@ Nsim = simLen/step;
 % * modulation strength is normally distributed with 0.08 +- 0.02 mV/deg; 
 % * additional white noise inputs to reduce the r2 (in petersen paper the r2 is low; not
 % implemented now)
-MIn = zeros(Data.NAll, Nsim);
-if exist('WhPara', 'var') && isfield(Data, 'WhMod')
-    disp('Calculating parameters whisker modulation')
-    WhPara.MeanAm = nanmean(WhPara.AllBaseAngles_Ori*180/pi);
-    WhPara.MinAm = nanmin(WhPara.AllBaseAngles_Ori*180/pi);
-    WhPara.MeanProtraAm = nanmean(WhPara.Amplitude);
-    if ~(length(WhPara.Phase) == Nsim)
-        error('Please use a whisker phase-trace that has the same length as the curvature trace')
+% * only neurons in the principal barrel are modulated
+MIn = zeros(ConData.NAll, Nsim);
+if simdata.whiskermodulation
+    if (exist('WhPara', 'var') && (~isempty(WhPara) && isfield(ConData, 'WhiskModel')))
+        disp('Calculating parameters whisker modulation')
+        % needed: whisker base angle trace for this trial in degrees,
+        % Amplitude and Phase, it is calculated with
+        % WhiskerPara_direct_modulation
+        WhPara.MeanAm = nanmean(WhPara.Baseangles_degrees);
+        WhPara.MinAm = nanmin(WhPara.Baseangles_degrees);
+        WhPara.MeanProtraAm = nanmean(WhPara.Amplitude);
+        if ~(length(WhPara.Phase) == Nsim)
+            error('Please use a whisker phase-trace that has the same length as the curvature trace')
+        else
+            MIn = 0.5*WhPara.MeanProtraAm*repmat(ConData.WhiskModel.k,[1,Nsim]).*(sin(repmat(WhPara.Phase,[ConData.NAll,1]) - repmat(ConData.WhiskModel.Pha0, [1,Nsim])));
+        end
+        if ~(size(MIn,1) == ConData.NAll)
+            error('Size matrix direct whisker modulation does not have correct number of neurons')
+        end
+        if ~(size(MIn,2) == Nsim)
+            error('Size matrix direct whisker modulation does not have correct number of time steps')
+        end
+    elseif ~exist('WhPara', 'var') &&  isfield(ConData, 'WhiskModel')
+        disp('Whisker modulation model (Crochet 2011) defined, but no data given; ignoring model.')
+
+    elseif  exist('WhPara', 'var') && ~isfield(ConData, 'WhiskModel')
+        disp('Whisker modulation data given, but no model (Crochet 2011) defined; ignoring data.')
     else
-        MIn = 0.5*WhPara.MeanProtraAm*repmat(Data.WhiskModel.k,[1,Nsim]).*(sin(repmat(WhPara.Phase,[Data.NAll,1]) - repmat(Data.WhiskModel.Pha0, [1,Nsim])));
+        disp('No direct whisker modulation')
     end
-    if ~(size(MIn,1) == Data.NAll)
-        error('Size matrix direct whisker modulation does not have correct number of neurons')
-    end
-    if ~(size(MIn,2) == Nsim)
-        error('Size matrix direct whisker modulation does not have correct number of time steps')
-    end
-    error('Still need to set whisker modulation!!!')
-elseif ~exist('WhPara', 'var') &&  isfield(Data, 'WhMod')
-    disp('Whisker modulation model (Crochet 2011) defined, but no data given; ignoring model.')
-    
-elseif  exist('WhPara', 'var') && ~isfield(Data, 'WhMod')
-    disp('Whisker modulation data given, but no model (Crochet 2011) defined; ignoring data.')
-else
-    disp('No direct whisker modulation')
 end
 
 %% Random inputs to network
@@ -111,11 +116,11 @@ if isfield(initdata, 'ExternalInput')
     RIn = initdata.ExternalInput;
 else
     disp('No external input given')
-    RIn = zeros(Data.NAll,Nsim);
+    RIn = zeros(ConData.NAll,Nsim);
 end
 
 %% assign initial parameters for vr, vt, v, u
-if exist('seeds','var') && isfield(seeds, 'initseed')
+if (exist('seeds','var') && (~isempty(seeds) && isfield(seeds, 'initseed')))
     rng(seeds.initseed)
 else
     rng('shuffle')
@@ -124,23 +129,23 @@ else
 end
 
 
-vr=initdata.Vrest*ones(Data.NAll,1) + initdata.stdVrest*randn(Data.NAll,1);     % resting membrane potential
+vr=initdata.Vrest*ones(ConData.NAll,1) + initdata.stdVrest*randn(ConData.NAll,1);     % resting membrane potential
 
 % threshold for spiking
 if strcmp(initdata.setVthres.type, 'distribution')
-    vt=initdata.Vthres*ones(Data.NAll,1) + initdata.stdVthres*randn(Data.NAll,1);   
+    vt=initdata.Vthres*ones(ConData.NAll,1) + initdata.stdVthres*randn(ConData.NAll,1);   
 else
     if strcmp(initdata.setVthres.type, 'pertype')
         % NB Neurons are in order of type, so one can loop over types
-        Nt_temp = [0, cumsum(Data.NtAll)];
+        Nt_temp = [0, cumsum(ConData.NtAll)];
         for i = 1:length(Nt_temp) - 1
-            vt(Nt_temp(i)+1:Nt_temp(i+1),1) = Data.Neuron_Vt.avg(i) + initdata.Vthresvar*Data.Neuron_Vt.std(i)*randn(Data.NtAll(i), 1);
+            vt(Nt_temp(i)+1:Nt_temp(i+1),1) = ConData.Neuron_Vt.avg(i) + initdata.Vthresvar*ConData.Neuron_Vt.std(i)*randn(ConData.NtAll(i), 1);
             % The next parameters are only for the dynamic threshold model (fixed
             % threshold does not use them)
             % currently spike threshold of excitatory neurons are dynamic, while those
             % of inhibitory neurons are static
-            VtModel.sl(Nt_temp(i)+1:Nt_temp(i+1), 1) = Data.Neuron_Vt.sl(i);
-            VtModel.a(Nt_temp(i)+1:Nt_temp(i+1), 1) = Data.Neuron_Vt.a(i);
+            VtModel.sl(Nt_temp(i)+1:Nt_temp(i+1), 1) = ConData.Neuron_Vt.sl(i);
+            VtModel.a(Nt_temp(i)+1:Nt_temp(i+1), 1) = ConData.Neuron_Vt.a(i);
         end
     elseif strcmp(initdata.setVthres.type, 'individual')
         vt = initdata.setindcell.Vthres;
@@ -151,8 +156,8 @@ end
 VT0 = vt;
     
 % initial values for neuron model
-v=initdata.V0.*ones(Data.NAll,1)+initdata.stdV0.*randn(Data.NAll,1); % Initial values of v
-u=initdata.u0.*ones(Data.NAll,1)+initdata.stdu0.*randn(Data.NAll,1); % Initial values of u
+v=initdata.V0.*ones(ConData.NAll,1)+initdata.stdV0.*randn(ConData.NAll,1); % Initial values of v
+u=initdata.u0.*ones(ConData.NAll,1)+initdata.stdu0.*randn(ConData.NAll,1); % Initial values of u
 % required initial value for computation
 
 if isfield(initdata, 'setindcell')
@@ -176,61 +181,62 @@ V0 = v;
 U0 = u;
 
 %% Preallocate
-inputsc = single(zeros(Data.NIn,1));
-modelsc = single(zeros(Data.NAll,1));
-inputin = single(zeros(Data.NAll,1));
-modelin = single(zeros(Data.NAll,1));
+inputsc = single(zeros(ConData.NIn,1));
+modelsc = single(zeros(ConData.NAll,1));
+inputin = single(zeros(ConData.NAll,1));
+modelin = single(zeros(ConData.NAll,1));
 Finput = [];
 Fmodel = [];
 
 
 Vminus = v;
-V = nan*ones(Data.NAll, Nsim);
-U = nan*ones(Data.NAll, Nsim);
+V = nan*ones(ConData.NAll, Nsim);
+U = nan*ones(ConData.NAll, Nsim);
 if initdata.Vthresdyn == 1
-    VT = nan*ones(Data.NAll, Nsim);
+    VT = nan*ones(ConData.NAll, Nsim);
 end
-dS = zeros(Data.NAll, 1);
-vt_sp=zeros(Data.NAll,1);
-vtct=zeros(Data.NAll,3);
-modelvt=zeros(Data.NAll, 1);
-modelspt=zeros(Data.NAll, 1);
+dS = zeros(ConData.NAll, 1);
+vt_sp=zeros(ConData.NAll,1);
+vtct=zeros(ConData.NAll,3);
+modelvt=zeros(ConData.NAll, 1);
+modelspt=zeros(ConData.NAll, 1);
 
-inputspikes(size(inputspikes,1)+1:Data.NIn,:) = 0;
-inputspikes(Data.NIn+1:end, :) = [];
+inputspikes(size(inputspikes,1)+1:ConData.NIn,:) = 0;
+inputspikes(ConData.NIn+1:end, :) = [];
 
 %% matrix for running variables
 % these varibles run in GPU
-STD_input = (Data.PMat_IntoAll.STD);
-STD_model = (Data.PMat_AlltoAll.STD);
+STD_input = (ConData.PMat_IntoAll.STD);
+STD_model = (ConData.PMat_AlltoAll.STD);
 
-g_input = (Data.PMat_IntoAll.g);
-s_input = (Data.PMat_IntoAll.s);
-g_model = (Data.PMat_AlltoAll.g);
-s_model = (Data.PMat_AlltoAll.s);
+g_input = (ConData.PMat_IntoAll.g);
+s_input = (ConData.PMat_IntoAll.s);
+g_model = (ConData.PMat_AlltoAll.g);
+s_model = (ConData.PMat_AlltoAll.s);
 
-CN_input = (Data.PMat_IntoAll.CN);
-CN_model = (Data.PMat_AlltoAll.CN);
+CN_input = (ConData.PMat_IntoAll.CN);
+CN_model = (ConData.PMat_AlltoAll.CN);
 
-Trise_input = (Data.PMat_IntoAll.Trise);
-Tfall_input = (Data.PMat_IntoAll.Tfall);
-Trise_model = (Data.PMat_AlltoAll.Trise);
-Tfall_model = (Data.PMat_AlltoAll.Tfall);
+Trise_input = (ConData.PMat_IntoAll.Trise);
+Tfall_input = (ConData.PMat_IntoAll.Tfall);
+Trise_model = (ConData.PMat_AlltoAll.Trise);
+Tfall_model = (ConData.PMat_AlltoAll.Tfall);
 
 inputspt_temp = inputspikes;
 
 %% variables needed to run STDP
-spikepairs_IntoAll = zeros(length(Data.PMat_IntoAll.Am), 4);
-spikepairs_AlltoAll = zeros(length(Data.PMat_AlltoAll.Am), 4);
-Ampost_IntoAll = Data.PMat_IntoAll.Am;
-Ampost_AlltoAll = Data.PMat_AlltoAll.Am;
+spikepairs_IntoAll = zeros(length(ConData.PMat_IntoAll.Am), 4);
+spikepairs_AlltoAll = zeros(length(ConData.PMat_AlltoAll.Am), 4);
+Ampost_IntoAll = ConData.PMat_IntoAll.Am;
+Ampost_AlltoAll = ConData.PMat_AlltoAll.Am;
+initial_connectivity = Ampost_AlltoAll;
 % Ampre_IntoAll = Data.PMat_IntoAll.Am;
 % Ampre_AlltoAll = Data.PMat_AlltoAll.Am;
 % celltype is organized as postType, postEI, preType, preEI
-Celltype_IntoAll = [Data.Cellinfo_All(Data.PMat_IntoAll.preCell(:,1), 4), Data.Cellinfo_All(Data.PMat_IntoAll.preCell(:,1), 6), ...
-    Data.Cellinfo_In(Data.PMat_IntoAll.preCell(:,2), 4), Data.Cellinfo_In(Data.PMat_IntoAll.preCell(:,2), 6)];
-Celltype_AlltoAll = [Data.Cellinfo_All(Data.PMat_AlltoAll.preCell(:,1), 4), Data.Cellinfo_All(Data.PMat_AlltoAll.preCell(:,1), 6), ...
-    Data.Cellinfo_All(Data.PMat_AlltoAll.preCell(:,2), 4), Data.Cellinfo_All(Data.PMat_AlltoAll.preCell(:,2), 6)];
+Celltype_IntoAll = [ConData.Cellinfo_All(ConData.PMat_IntoAll.preCell(:,1), 4), ConData.Cellinfo_All(ConData.PMat_IntoAll.preCell(:,1), 6), ...
+    ConData.Cellinfo_In(ConData.PMat_IntoAll.preCell(:,2), 4), ConData.Cellinfo_In(ConData.PMat_IntoAll.preCell(:,2), 6)];
+Celltype_AlltoAll = [ConData.Cellinfo_All(ConData.PMat_AlltoAll.preCell(:,1), 4), ConData.Cellinfo_All(ConData.PMat_AlltoAll.preCell(:,1), 6), ...
+    ConData.Cellinfo_All(ConData.PMat_AlltoAll.preCell(:,2), 4), ConData.Cellinfo_All(ConData.PMat_AlltoAll.preCell(:,2), 6)];
 
 %% simulation starts
 if exist('seeds','var') && isfield(seeds, 'runseed')
@@ -260,7 +266,7 @@ for t=1:Nsim % simulation of Ni ms
     
     if isempty(ind_input) == 0
         for i = 1:length(ind_input)
-            inputpre = [inputpre; Data.PMat_IntoAll.postIdx{ind_input(i)}];
+            inputpre = [inputpre; ConData.PMat_IntoAll.postIdx{ind_input(i)}];
         end
         inputsc(ind_input) = inputsc(ind_input)+1;
         clear ind_input ind_sc
@@ -270,8 +276,8 @@ for t=1:Nsim % simulation of Ni ms
         %Am will be generated from CV and Am matrix
         
         %  check for input spikes from input layer 
-        [Finput, preSpikes_input, timestepseed_input(t)] = simcolumn_synapse_onestep(inputpre, Ampost_IntoAll, STD_input, Data.PMat_IntoAll.CV, ...
-            Data.PMat_IntoAll.Fail, Data.PMat_IntoAll.Delay, Data.PMat_IntoAll.preID, Data.NAll, Finput, tm, timestepseed_input(t));
+        [Finput, preSpikes_input, timestepseed_input(t)] = simcolumn_synapse_onestep(inputpre, Ampost_IntoAll, STD_input, ConData.PMat_IntoAll.CV, ...
+            ConData.PMat_IntoAll.Fail, ConData.PMat_IntoAll.Delay, ConData.PMat_IntoAll.preID, ConData.NAll, Finput, tm, timestepseed_input(t));
 
         
     end
@@ -279,7 +285,7 @@ for t=1:Nsim % simulation of Ni ms
     % update running matrix for the synaptic current model
     if isempty(Finput) == 0
         [s_input, STD_input, Finput] = simcolumn_updatesynap_ver2(s_input, ...
-            STD_input, Data.PMat_IntoAll.Plas, Finput, tm);
+            STD_input, ConData.PMat_IntoAll.Plas, Finput, tm);
     end
     
     idx = find(v>vt);%neuron reaches spike threshold
@@ -305,8 +311,8 @@ for t=1:Nsim % simulation of Ni ms
             % contains all postsynaptic partner to one presynaptic neuron)
             % modelpost uses post-pre direction to calculate STDP, so use
             %  preIdx instead 
-            modelpre  = [modelpre; Data.PMat_AlltoAll.postIdx{modelfired(i)}];
-            modelpost = [modelpost; Data.PMat_AlltoAll.preIdx{modelfired(i)}];
+            modelpre  = [modelpre; ConData.PMat_AlltoAll.postIdx{modelfired(i)}];
+            modelpost = [modelpost; ConData.PMat_AlltoAll.preIdx{modelfired(i)}];
             modelsc(modelfired(i)) = modelsc(modelfired(i)) + 1;
             modelspt(modelfired(i), modelsc(modelfired(i))) = tm - step;
             modelvt(modelfired(i), modelsc(modelfired(i))) = vt_sp(modelfired(i));
@@ -316,8 +322,8 @@ for t=1:Nsim % simulation of Ni ms
         
         % check for input spikes from simulated layer
         [Fmodel, preSpikes_model, timestepseed_model(t)] = simcolumn_synapse_onestep(modelpre, Ampost_AlltoAll, STD_model, ...
-        Data.PMat_AlltoAll.CV, Data.PMat_AlltoAll.Fail, Data.PMat_AlltoAll.Delay, ...
-        Data.PMat_AlltoAll.preID, Data.NAll, Fmodel, tm, timestepseed_model(t));
+        ConData.PMat_AlltoAll.CV, ConData.PMat_AlltoAll.Fail, ConData.PMat_AlltoAll.Delay, ...
+        ConData.PMat_AlltoAll.preID, ConData.NAll, Fmodel, tm, timestepseed_model(t));
         
                 
 
@@ -332,17 +338,19 @@ for t=1:Nsim % simulation of Ni ms
     %% STDP rule
     % right now only run it for L4-L23 network; i.e. assume no plasticity
     % in thalamo-cortical synapses
-%     spikeidx_AlltoAll = [modelpre; modelpost];
-%     if ~isempty(spikeidx_AlltoAll)
-%         [spikepairs_AlltoAll, Ampost_AlltoAll] = simcolumn_Plasticity_STDP...
-%             (spikepairs_AlltoAll, spikeidx_AlltoAll, Celltype_AlltoAll, Ampost_AlltoAll, 3);
-%     end
+    if simdata.STDP
+        spikeidx_AlltoAll = [modelpre; modelpost];
+        if ~isempty(spikeidx_AlltoAll)
+            [spikepairs_AlltoAll, Ampost_AlltoAll] = simcolumn_Plasticity_STDP...
+                (spikepairs_AlltoAll, spikeidx_AlltoAll, Celltype_AlltoAll, Ampost_AlltoAll, 3);
+        end
+    end
     
     
     %% update running matrix for the synaptic current model
     if isempty(Fmodel) == 0
         [s_model, STD_model, Fmodel] = simcolumn_updatesynap_ver2(s_model, ...
-            STD_model, Data.PMat_AlltoAll.Plas, Fmodel, tm);
+            STD_model, ConData.PMat_AlltoAll.Plas, Fmodel, tm);
     end
     
     
@@ -369,8 +377,8 @@ for t=1:Nsim % simulation of Ni ms
     STD_model = STD_model + step * (-(STD_model-1)./Tau_plas);
     
     % calculate synaptic current
-    inputin = simcolumn_calcualteI_Mat_ver2(g_input, Data.PMat_IntoAll.preEI, v);
-    modelin = simcolumn_calcualteI_Mat_ver2(g_model, Data.PMat_AlltoAll.preEI, v);
+    inputin = simcolumn_calcualteI_Mat_ver2(g_input, ConData.PMat_IntoAll.preEI, v);
+    modelin = simcolumn_calcualteI_Mat_ver2(g_model, ConData.PMat_AlltoAll.preEI, v);
     
 
     I = inputin+modelin;
@@ -397,7 +405,7 @@ end
 
 
 %% Save
-
+final_connectivity = Ampost_AlltoAll;
 
 V = single(V);
 U = single(U);
@@ -408,36 +416,37 @@ end
 
 
 
-cellinfo_all = Data.Cellinfo_All;
-cellinfo_input = Data.Cellinfo_In;
-Neuron_Para = Data.Neuron_Para;
+cellinfo_all = ConData.Cellinfo_All;
+cellinfo_input = ConData.Cellinfo_In;
+Neuron_Para = ConData.Neuron_Para;
 
-a = exist(Data.savefolder, 'dir');
+a = exist(ConData.savefolder, 'dir');
 if ~(a==7) 
-    mkdir(Data.savefolder)
+    mkdir(ConData.savefolder)
 end
 
-whattosave = {'Neuron_Para', 'Tau_plas', 'cellinfo_all', 'cellinfo_input', ...
+if isfield(simdata, 'whattosave')
+    whattosave = simdata.whattosave;
+else
+    whattosave = {'Neuron_Para', 'Tau_plas', 'cellinfo_all', 'cellinfo_input', ...
         'modelsc', 'modelspt', 'inputsc', 'inputspikes', 'simLen', 'step', ...
-        'V','U', 'V0','U0','vr', 'seeds', 'timestepseed_input', ...
-        'timestepseed_model', 'initdata','simdata'};
-    
-nwts = length(whattosave);
-if exist('WhPara', 'var')
-    nwts = nwts+1;
-    whattosave{nwts} = 'MIn';
+        'V0','U0','VT0', 'vr', 'seeds', 'timestepseed_input', ...
+        'timestepseed_model', 'initdata','simdata', 'final_connectivity', 'initial_connectivity'};
 end
+
 if initdata.Vthresdyn == 1
-    nwts = nwts+1;
-    whattosave{nwts} = 'VT';
     thresholdname = ['dynthreshold_set'];
 else
     thresholdname = ['fixthreshold_set'];
-    nwts = nwts+1;
-    whattosave{nwts} = 'VT0';
 end
 
-savename = [Data.savefolder,Data.FnametoSave '_Simcolumn_' thresholdname '_' initdata.setVthres.type '_simulation_' num2str(initdata.nsim)];
 
 
-save(savename, whattosave{:})
+savename = [ConData.savefolder,ConData.FnametoSave '_Simcolumn_' thresholdname '_' initdata.setVthres.type '_simulation_' num2str(initdata.nsim)];
+save(savename, whattosave{:}, '-v7.3')
+
+%% Overwrite Am in ConData (this changes in case of STDP, otherwise it stays the same)
+if simdata.STDP
+    ConData.PMat_AlltoAll.Am = final_connectivity;
+end
+

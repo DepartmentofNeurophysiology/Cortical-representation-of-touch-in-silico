@@ -1,4 +1,4 @@
-function run_sim(make_new_thalamic_input,make_new_thalamic_kernels,make_new_connectivity,includemodulationyn,savename)
+function run_sim(make_new_thalamic_input,make_new_thalamic_kernels,make_new_connectivity,includemodulationyn,includeSTDPyn, savename)
 
 %% General settings
 f = filesep;
@@ -6,7 +6,7 @@ addpath(genpath(['.']))
 
 savefolder = ['Simulation_results' f savename '_data' f];
 
-%% Specific settings thalamic input fromSvoboda data
+%% Specific settings thalamic input from Svoboda data
 if make_new_thalamic_input
     % What whisker data to use; here specific for Svoboda data
     SvobodaStruct.loadfolder = ['Input data' f];                % folder where input data are stored
@@ -15,16 +15,19 @@ if make_new_thalamic_input
     SvobodaStruct.dataname = 'data_struct';                     % addition on file names
     SvobodaStruct.volume = 2;                                   % trials for which recorded volume to use (see explanation Svoboda data)
     SvobodaStruct.window.start = 'first touch';                 % How to align trials ('first touch', 'first' or 'pole in reach')
-    SvobodaStruct.window.window = [-2000,4000];                   % window (ms) around start time (above)
-%     SvobodaStruct.trialvec = [8,8,9];                           % (optional) which of the selected trials to use
+    SvobodaStruct.window.window = [-2000,4000];                 % window (ms) around start time (above)
+    SvobodaStruct.trialvec = [8,8,9];                           % (optional) which of the selected trials to use
     
-    savename = [savename '_' SvobodaStruct.animal '_' date];
-    savefolder = ['Simulation_results' f savename '_data' f];
+    savename_input = [savename '_' SvobodaStruct.animal '_' date];
 
     % Thalamic spike trains (filter neurons responding to whiser data above)
     SvobodaStruct.Nkernel_ba = 80;                              % # base angle kernels ('neurons')
     SvobodaStruct.Nkernel_c  = 80;                              % # curvature kernels ('neurons')
     SvobodaStruct.Nkernel_m  = 40;                              % # mixed kernels ('neurons')
+else
+    dategen = input('Please give date input to load was generated: ', 's');
+    animalname = input('Please give animal identifier of input to load: ', 's');
+    savename_input = [savename '_' animalname '_' dategen];
 end
 
 if ~exist(savefolder, 'dir')
@@ -55,38 +58,68 @@ if make_new_connectivity
     generate_connectivity(barrelstruct, savefolder, savename)
 else
     load([savefolder 'CMDMs_' savename], 'barrelstruct');
-    [Nbx, Nby] = size(barrelstruct);
 end
 
 % reorganize the connectivity into a single list in order to speed up simulations.
 ConMatfilename = ['CMDMs_' savename]; % connectivity matrix file
-Nbarrel = Nbx*Nby;
-ConData = reorganize_conmat(savename ,savefolder, savefolder, ConMatfilename, includemodulationyn); 
+
+if exist([savefolder ConMatfilename '_ConData.mat'],'file') == 2
+    load([savefolder ConMatfilename '_ConData.mat'])
+else 
+    ConData = reorganize_conmat(savename ,savefolder, savefolder, ConMatfilename, includemodulationyn);    
+end
 
 %% Make/load thalamic spike trains 
-
 if make_new_thalamic_input
     % Make new spike trains (from Svoboda recordings)
-    SpikeTrainStruct = make_thalamic_spike_trains_svoboda_recordings(savefolder, savename, SvobodaStruct, barrelstruct, make_new_thalamic_kernels);
+    SpikeTrainStruct = make_thalamic_spike_trains_svoboda_recordings(savefolder, savename_input, SvobodaStruct, barrelstruct, make_new_thalamic_kernels);
     TSim = SvobodaStruct.window.window(2)-SvobodaStruct.window.window(1);
 else
     % Load existing spike trains
-    load([savefolder savename '_Thalamic_Spike_Trains']);
-    load([savefolder savename '_Thalamic_Kernels']);
+    load([savefolder savename_input '_Thalamic_Spike_Trains']);
+    load([savefolder savename_input '_Thalamic_Kernels']);
     TSim = length(SpikeTrainStruct{1}.PSTH{1,1})*(KernelStruct{1}.kerneltime(2)-KernelStruct{1}.kerneltime(1));
 end
 % Check
 Input_spike_trains = check_reorganize_spike_trains(SpikeTrainStruct, barrelstruct);
-clear SpikeTrainStruct WhiskerTrace barrelstruct KernelStruct
-
-%% Load whisker angles for direct modulation (optional)
-% Needs to be made
+clear SpikeTrainStruct KernelStruct SvobodaStruct
 
 %% Simulation parameters
-simdata.TSim = TSim;                                                                % (ms) Length of the simulation: can be single number (so same length for all trials) or an array of numbers
-simdata.timestep = 0.1;                                                             % ms
-simdata.Trials = 1:2;                                                               % This is the amount of times the simulation is run for the same initial conditions/parameters/trace etc
-simdata.inputvec = [1,2];                                                           % Which input spike traces (trials) from SpikeTrainStruct to use (optional, if empty all will be used).
+simdata.TSim = TSim;                    % (ms) Length of the simulation: can be single number (so same length for all trials) or an array of numbers
+simdata.timestep = 0.1;                 % ms
+simdata.Trials = 1:2;                   % This is the amount of times the simulation is run for the same initial conditions/parameters/trace etc
+simdata.inputvec = [1,2];               % Which input spike traces (trials) from SpikeTrainStruct to use (optional, if empty all will be used).
+if includeSTDPyn
+    simdata.STDP = true;                    % Turn on STDP          
+else
+    simdata.STDP = true;                    % Turn off STDP        
+end
+
+% Parameters and variables to save for each trial:
+simdata.whattosave = {'Neuron_Para', 'Tau_plas', 'cellinfo_all', 'cellinfo_input', ...
+        'modelsc', 'modelspt', 'inputsc', 'inputspikes', 'simLen', 'step', ...
+        'V0','U0','VT0','vr', 'V', 'seeds', 'timestepseed_input', ...
+        'timestepseed_model','simdata', 'final_connectivity', 'initial_connectivity'};
+% Now left out (too large), but can be added: 
+%   * initdata 
+%   * MIn (whisker modulation for each cell, can easily be reconstructed)
+%   * U (recovery variable U for each cell) 
+%   * VT (dynamic threshold trace for each cell)    
+
+%% Make whisker angles for direct modulation (optional)  
+if includemodulationyn
+    simdata.whiskermodulation = true;   % Turn on direct whisker modulation
+    if make_new_thalamic_input
+        load([savefolder savename_input '_Thalamic_Spike_Trains'], 'WhiskerTrace')
+        WhPara = WhiskerPara_direct_modulation(WhiskerTrace, barrelstruct, simdata.timestep, savefolder, savename_input);
+    else
+        load([savefolder savename_input '_WhiskerModulation']);
+    end
+else
+    simdata.whiskermodulation = false;   % Turn off direct whisker modulation
+    WhPara = [];
+end
+clear WhiskerTrace barrelstruct 
 
 %% Initial conditions
 % Initial parameters
@@ -142,10 +175,10 @@ initdata.ExternalInput = zeros(simdata.Nsim, ConData.NAll,simdata.TSim/simdata.t
 
 %% Seeding (optional)
 % NB should be as long as nr of trials, or non-existent
-seeds.initseed = [3,3,3,3,3,3,2,2]; % for seeding initial values (if stdV>0 or stdu0>0)
+seeds.initseed = [3,3,3,3,3,3,2,2];  % for seeding initial values (if stdV>0 or stdu0>0)
 seeds.runseed  = [5,5,5,5,2,2,2,2];  % for seeding synaptic failures and amplitudes
 %% Run simulation
-run_trials(ConData, initdata, simdata, Input_spike_trains, seeds)
+run_trials(ConData, initdata, simdata, Input_spike_trains, seeds, WhPara)
 
 %% Make 'luminescence' data: convolve and downsample, see Vogelstein et al 2009
 disp('Calculating calcium data')
@@ -161,5 +194,5 @@ Para.tmax = TSim;
 simulation_to_calcium( Para, savefolder,savename, initdata, simdata.Nsim);
 
 %% Plot
-plot_simulation(simdata.Nsim, initdata, ConData)
+plot_simulation(simdata.Nsim, initdata, ConData, savename_input)
 

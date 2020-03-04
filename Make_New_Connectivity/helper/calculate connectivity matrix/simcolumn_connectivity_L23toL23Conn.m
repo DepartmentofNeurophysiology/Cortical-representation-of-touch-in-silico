@@ -17,7 +17,7 @@ PreType = zeros(1, length(preCells)); % type identifier of presynaptic cells
 % keyboard
 
 % use parellel computing
-keyboard
+
 if verLessThan('matlab','8.2')
     if matlabpool('size') == 0
         matlabpool open 7
