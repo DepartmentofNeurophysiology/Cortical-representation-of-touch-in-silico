@@ -1,4 +1,4 @@
-function [whiskermat, luminesmat, upsample_rate, binsize_whisker, dtstart] = load_data_across_sessions(loadfolder, animal, sessionvec, dataname, volume, window, plotcheck)
+function [whiskermat, luminesmat, upsample_rate, binsize_whisker, dtstart, validtrials] = load_data_across_sessions(loadfolder, animal, sessionvec, dataname, volume, window, plotcheck)
 % Load data from the same animal, across multiple sessions
 % INPUT:
 % * loadfolder (string): folder name of where the session data files are
@@ -369,6 +369,7 @@ for ns = 1:Nsession
         whiskermat_temp = whiskermat_temp(:,:,validvec == 1);
         luminesmat_temp = luminesmat_temp(:,:,validvec == 1);
         dtstart_temp    = dtstart_temp(validvec == 1);
+        validtrials_temp = [trialvec; validvec];
 
         %% Concatenate with previous sessions
         if exist('whiskermat','var')
@@ -392,6 +393,14 @@ for ns = 1:Nsession
             end
         else
             dtstart = dtstart_temp;
+        end
+        
+        if exist('validtrials','var')
+            if (~isempty(luminesmat_temp)) && (~isempty(whiskermat_temp))
+                validtrials = [validtrials validtrials_temp];
+            end
+        else
+            validtrials = validtrials_temp;
         end
 
         %% For the next round

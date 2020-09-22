@@ -1,7 +1,7 @@
 function ConData = reorganize_conmat(fname, savefolder, CMDM_folder, CMDMs_file, includemodulationyn, varargin)
 % reorganize_conmat 
 % * reorganizes the connectivity into a single list in order to speed up
-% simulations. This all gets put into the structure 'Data' that is needed
+% simulations. This all gets put into the structure 'ConData' that is needed
 % to run each trial (function: simcolumn_indtrial)
 % * If the files '_ParaMat', '_ParaMat_reduced.mat' and
 % '_WhiskerModulationModel.mat' do not exist in the folder of the
@@ -468,6 +468,6 @@ if ~(a==7)
     mkdir(ConData.savefolder)
 end
 % save([savefolder CMDMs_file(1:end-4) '_ConData.mat'], 'Data');
-save([savefolder CMDMs_file '_ConData.mat'], 'Data');
+save([savefolder CMDMs_file '_ConData.mat'], 'ConData');
 
 

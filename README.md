@@ -36,7 +36,7 @@ A full simulation includes:
 
 This will result in the following files in subfolder ‘Simulation Results -> (user defined name)
 
-* cellinfo: information about all cells: (Number of Cells-by 6) matrix, with
+* cellinfo: information about all cells: (Number of Cells-by 6, note that L4 cells come first, followed by L23 cells) matrix, with
 	* the first 3 columns are the location of each cell 
 		* first column: position from the middle of the barrel (~rostral-caudal)
 		* second column: position from the middle of the barrel (~dorsal-ventral) 
@@ -71,6 +71,8 @@ This will result in the following files in subfolder ‘Simulation Results -> (u
 * (…)_WhiskerModulation: the direct whisker modulation [3] for these input trials
 * (…)_Simcolumn_(…)_(simulation number): spike times and membrane potentials of each simuation (what is saved depends on what is passed in variable 'whattosave' in run_sim)
 * (…)_Simcolumn_(…)_(simulation number)_calciumdata: spike times convolved with an exponential kernel to mimic 2-photon calcium data
+
+NB Note that the measured cell densities are in mice, but most axon/dendritic distribution patterns, connectivity and synaptic efficacy in the literature are from rats. To make these fit, the measured cell densities were scaled to fit rat data. So the resulting cell locations are appropriate for rat. Note that once the connectivity data are generated, these cell locations are not used in the network simulations (as neurons are simulated as point neurons). To get back to relevant mouse cell locations, use function cellinfo_mouse = rat_to_mouse_locations(cellinfo).
 
 References
 [1] Izhikevich, E. M. (2003). Simple Model of Spiking Neurons. IEEE Transactions on Neural Networks, 14(6), 1572–1596. https://doi.org/10.1109/TNN.2003.820440

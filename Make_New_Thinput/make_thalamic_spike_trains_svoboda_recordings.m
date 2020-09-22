@@ -1,4 +1,4 @@
-function SpikeTrainStruct = make_thalamic_spike_trains_svoboda_recordings(savefolder, savename, SvobodaStruct, Barrelstruct, make_new_thalamic_kernels)
+function SpikeTrainStruct = make_thalamic_spike_trains_svoboda_recordings(savefolder, savename_input, SvobodaStruct, Barrelstruct, make_new_thalamic_kernels)
 % Make Thalamic spike trains from Svoboda recording.
 
 % Input:
@@ -57,19 +57,19 @@ f = filesep;
         KernelStruct = cell(Nbx, Nby);
         for nbx = 1:Nbx
             for nby = 1:Nby
-                KernelStruct{nbx,nby} = make_kernels_angle_curvature_Svobodaexp(SvobodaStruct.Nkernel_ba, SvobodaStruct.Nkernel_c, SvobodaStruct.Nkernel_m, binsize, [savefolder savename '_Thalamic_Kernels_barrel_' num2str(nbx) '_' num2str(nby)]);
+                KernelStruct{nbx,nby} = make_kernels_angle_curvature_Svobodaexp(SvobodaStruct.Nkernel_ba, SvobodaStruct.Nkernel_c, SvobodaStruct.Nkernel_m, binsize, [savefolder SvobodaStruct.savename '_Thalamic_Kernels_barrel_' num2str(nbx) '_' num2str(nby)]);
             end
         end
-        save([savefolder savename '_Thalamic_Kernels'], 'KernelStruct')
+        save([savefolder SvobodaStruct.savename '_Thalamic_Kernels'], 'KernelStruct')
         % delete temp files
         for nbx = 1:Nbx
             for nby = 1:Nby 
-                delete([savefolder savename '_Thalamic_Kernels_barrel_' num2str(nbx) '_' num2str(nby) '.mat'])
+                delete([savefolder SvobodaStruct.savename '_Thalamic_Kernels_barrel_' num2str(nbx) '_' num2str(nby) '.mat'])
             end
         end   
     else
         % Load kernels from file
-         load([savefolder savename '_Thalamic_Kernels']);
+         load([savefolder SvobodaStruct.savename '_Thalamic_Kernels']);
          [Nbx, Nby] = size(KernelStruct);
          Nbarrel = Nbx*Nby;
     end
@@ -100,15 +100,15 @@ f = filesep;
             end
             % Generate spike trains
             plotyn = 1;
-            SpikeTrainStruct{nbx,nby} = kernel_recording_to_spiketrain(WhiskerTrace, KernelStruct{nbx,nby}, SpikeGenStruct{nbx,nby}, [savefolder savename '_Thalamic_Spike_Trains_barrel_' num2str(nbx) '_' num2str(nby)], plotyn);
+            SpikeTrainStruct{nbx,nby} = kernel_recording_to_spiketrain(WhiskerTrace, KernelStruct{nbx,nby}, SpikeGenStruct{nbx,nby}, [savefolder savename_input '_Thalamic_Spike_Trains_barrel_' num2str(nbx) '_' num2str(nby)], plotyn);
         end
     end
-    save([savefolder savename '_Thalamic_Spike_Trains'], 'SpikeTrainStruct', 'WhiskerTrace', 'SvobodaStruct')
+    save([savefolder savename_input '_Thalamic_Spike_Trains'], 'SpikeTrainStruct', 'WhiskerTrace', 'SvobodaStruct')
     
     %% delete temp files
     for nbx = 1:Nbx
         for nby = 1:Nby 
-            delete([savefolder savename '_Thalamic_Spike_Trains_barrel_' num2str(nbx) '_' num2str(nby) '.mat'])
+            delete([savefolder savename_input '_Thalamic_Spike_Trains_barrel_' num2str(nbx) '_' num2str(nby) '.mat'])
         end
     end    
 end

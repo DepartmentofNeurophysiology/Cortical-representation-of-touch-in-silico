@@ -70,7 +70,11 @@ for lp_ipspikes = inputvec
                         nsim = nsim+1;
                         
                         inputspikes_now = inputspikes{lp_ipspikes};
-                        WhPara_thissim = WhPara{lp_nit};
+                        if isempty(WhPara)
+                            WhPara_thissim = [];
+                        else
+                            WhPara_thissim = WhPara{lp_nit};
+                        end
 
                         [Ninst, ~] = size(inputspikes_now);
                         if ~(Ninst == networkData.NIn)
