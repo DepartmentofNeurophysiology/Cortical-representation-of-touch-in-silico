@@ -439,13 +439,13 @@ function plot_thalamic_kernels(KernelStruct)
     for nbx = 1:Nbx
         for nby=1:Nby
             nb = nb+1;
-            [Nkernel, Ndimk]  = size(KernelStruct{nbx, nby}.Kernels);
+            [Nkernel, Ndimk]  = size(KernelStruct.Kernels);
             for nd = 1:Ndimk
                 subplot(Nbarrel,Ndimk, (nb-1)*Ndimk+nd)
                 title(['Dimension ', num2str(nd) ', barrel ' num2str(nb)])
                 hold all
                 for nk = 1:Nkernel            
-                    plot(-1*fliplr(KernelStruct{nbx, nby}.kerneltime), fliplr(KernelStruct{nbx, nby}.Kernels{nk, nd}))
+                    plot(-1*fliplr(KernelStruct.kerneltime), fliplr(KernelStruct.Kernels{nk, nd}))
                     xlabel('time before spike (ms)')
                     ylabel('stimulus amplitude')
                     grid on

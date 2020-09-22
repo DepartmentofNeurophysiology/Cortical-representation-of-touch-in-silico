@@ -1,36 +1,13 @@
-function run_sim(make_new_thalamic_input,make_new_thalamic_kernels,make_new_connectivity,includemodulationyn,includeSTDPyn, savename)
+function run_sim_compare_data(InputDataStruct,make_new_thalamic_kernels,make_new_connectivity,do_new_simulations, includemodulationyn,includeSTDPyn, CalciumPara, savename)
 
 %% General settings
 f = filesep;
 addpath(genpath(['.']))
 
-savefolder = ['Simulation_results' f savename '_data' f];
+savefolder = [InputDataStruct.savefolder 'Simulation_results' f savename '_data' f];
 
 %% Specific settings thalamic input from Svoboda data
-if make_new_thalamic_input
-    % What whisker data to use; here specific for Svoboda data
-    SvobodaStruct.loadfolder = ['Input data' f];                % folder where input data are stored
-    SvobodaStruct.animal = 'an171923';                          % animal ID
-    SvobodaStruct.sessionvec = {'2012_06_04'};                  % which sessions to load
-    SvobodaStruct.dataname = 'data_struct';                     % addition on file names
-    SvobodaStruct.volume = 2;                                   % trials for which recorded volume to use (see explanation Svoboda data)
-    SvobodaStruct.window.start = 'first touch';                 % How to align trials ('first touch', 'first' or 'pole in reach')
-    SvobodaStruct.window.window = [-2000,4000];                 % window (ms) around start time (above)
-    SvobodaStruct.trialvec = [8,8,9];                           % (optional) which of the selected trials to use
-    
-    savename_input = [savename '_' SvobodaStruct.animal '_' date];
-    SvobodaStruct.savename = savename;
-
-    % Thalamic spike trains (filter neurons responding to whiser data above)
-    SvobodaStruct.Nkernel_ba = 80;                              % # base angle kernels ('neurons')
-    SvobodaStruct.Nkernel_c  = 80;                              % # curvature kernels ('neurons')
-    SvobodaStruct.Nkernel_m  = 40;                              % # mixed kernels ('neurons')
-else
-    dategen = input('Please give date input to load was generated: ', 's');
-    animalname = input('Please give animal identifier of input to load: ', 's');
-    savename_input = [savename '_' animalname '_' dategen];
-end
-
+savename_input = [savename '_' InputDataStruct.animal '_vol' num2str(InputDataStruct.volume)];
 if ~exist(savefolder, 'dir')
     mkdir(savefolder)
 end
@@ -39,7 +16,7 @@ end
 if make_new_connectivity
     disp('Generating connectivity')
     % Make barrel-grid
-    Nbx = 3;                                                % # of barrels 'x-direction'
+    Nbx = 1;                                                % # of barrels 'x-direction'
     Nby = 1;                                                % # of barrels 'y-direction'
     barrelstruct = cell(Nbx, Nby);
     for nbx = 1:Nbx
@@ -51,9 +28,7 @@ if make_new_connectivity
         end
     end
     % Choose main and secondary barrels
-    barrelstruct{2,1}.mainbarrel    = 1; % main
-    barrelstruct{1,1}.mainbarrel    = 2; % secondary
-    barrelstruct{3,1}.mainbarrel    = 2; % tertiary
+    barrelstruct{1,1}.mainbarrel    = 1; % main
     
     % Generate connectivity
     generate_connectivity(barrelstruct, savefolder, savename)
@@ -71,14 +46,15 @@ else
 end
 
 %% Make/load thalamic spike trains 
-if make_new_thalamic_input
+
+if InputDataStruct.make_new_thalamic_input
     % Make new spike trains (from Svoboda recordings)
-    SpikeTrainStruct = make_thalamic_spike_trains_svoboda_recordings(savefolder, savename_input, SvobodaStruct, barrelstruct, make_new_thalamic_kernels);
-    TSim = SvobodaStruct.window.window(2)-SvobodaStruct.window.window(1);
+    SpikeTrainStruct = make_thalamic_spike_trains_svoboda_recordings(savefolder, savename_input, InputDataStruct, barrelstruct, make_new_thalamic_kernels);
+    TSim = InputDataStruct.window.window(2)-InputDataStruct.window.window(1);
 else
     % Load existing spike trains
     load([savefolder savename_input '_Thalamic_Spike_Trains']);
-    load([savefolder savename_input '_Thalamic_Kernels']);
+    load([savefolder savename '_Thalamic_Kernels']);
     TSim = length(SpikeTrainStruct{1}.PSTH{1,1})*(KernelStruct{1}.kerneltime(2)-KernelStruct{1}.kerneltime(1));
 end
 % Check
@@ -88,8 +64,8 @@ clear SpikeTrainStruct KernelStruct SvobodaStruct
 %% Simulation parameters
 simdata.TSim = TSim;                    % (ms) Length of the simulation: can be single number (so same length for all trials) or an array of numbers
 simdata.timestep = 0.1;                 % ms
-simdata.Trials = 1:2;                   % This is the amount of times the simulation is run for the same initial conditions/parameters/trace etc
-simdata.inputvec = [1,2];               % Which input spike traces (trials) from SpikeTrainStruct to use (optional, if empty all will be used).
+simdata.Trials = 1;                   % This is the amount of times the simulation is run for the same initial conditions/parameters/trace etc
+simdata.inputvec = [];               % Which input spike traces (trials) from SpikeTrainStruct to use (optional, if empty all will be used).
 if includeSTDPyn
     simdata.STDP = true;                    % Turn on STDP          
 else
@@ -172,28 +148,25 @@ simdata.Nsim =length(inputvec)*length(initdata.Vrest)*initdata.setVthres.nsim*le
 % initdata.setindcell.V0 = initdata.setindcell.Vrest;
 
 %% External inputs (for instance random, optional)
-initdata.ExternalInput = zeros(simdata.Nsim, ConData.NAll,simdata.TSim/simdata.timestep); % (optional) random inputs to each cell 
+% initdata.ExternalInput = zeros(simdata.Nsim, ConData.NAll,simdata.TSim/simdata.timestep); % (optional) random inputs to each cell 
 
 %% Seeding (optional)
 % NB should be as long as nr of trials, or non-existent
-seeds.initseed = [3,3,3,3,3,3,2,2];  % for seeding initial values (if stdV>0 or stdu0>0)
-seeds.runseed  = [5,5,5,5,2,2,2,2];  % for seeding synaptic failures and amplitudes
+% seeds.initseed = [3,3,3,3,3,3,2,2];  % for seeding initial values (if stdV>0 or stdu0>0)
+% seeds.runseed  = [5,5,5,5,2,2,2,2];  % for seeding synaptic failures and amplitudes
 %% Run simulation
-run_trials(ConData, initdata, simdata, Input_spike_trains, seeds, WhPara)
+savename_sims = savename_input;
+if do_new_simulations
+    ConData.FnametoSave = savename_sims;
+    run_trials(ConData, initdata, simdata, Input_spike_trains, [], WhPara)
+end
 
 %% Make 'luminescence' data: convolve and downsample, see Vogelstein et al 2009
-disp('Calculating calcium data')
-Para.frame_rate_c = 7/1000; % : sampling rate calcium calculations (kHz)
-Para.tau_c = 500;           % : calcium decay time constant (ms)
-Para.Ca_b = 0.1;            % : baseline calcium concentration (microM)
-Para.A_c = 5;               % : calcium concentration 'jump' for each spike
-Para.sigma_c = 1;           % : std noise for calcium signal
-Para.alpha = 1;             % : scale fluorescence signal
-Para.beta =0;               % : offset fluorescence signal
-Para.sigma_f =1;            % : std noise for luminescence
-Para.tmax = TSim;
-simulation_to_calcium( Para, savefolder,savename, initdata, simdata.Nsim);
+if CalciumPara.make_new_calcium_data
+    disp('Calculating calcium data')
+    simulation_to_calcium( CalciumPara, savefolder,savename_sims, initdata, simdata.Nsim);
+end
 
 %% Plot
-plot_simulation(simdata.Nsim, initdata, ConData, savename_input)
+% plot_simulation(simdata.Nsim, initdata, ConData, savename_input)
 

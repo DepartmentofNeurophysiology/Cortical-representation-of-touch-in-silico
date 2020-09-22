@@ -1,7 +1,7 @@
-function Data = reorganize_conmat(fname, savefolder, CMDM_folder, CMDMs_file, includemodulationyn, varargin)
+function ConData = reorganize_conmat(fname, savefolder, CMDM_folder, CMDMs_file, includemodulationyn, varargin)
 % reorganize_conmat 
 % * reorganizes the connectivity into a single list in order to speed up
-% simulations. This all gets put into the structure 'Data' that is needed
+% simulations. This all gets put into the structure 'ConData' that is needed
 % to run each trial (function: simcolumn_indtrial)
 % * If the files '_ParaMat', '_ParaMat_reduced.mat' and
 % '_WhiskerModulationModel.mat' do not exist in the folder of the
@@ -29,13 +29,13 @@ checkField(P, 'WhPara', {});
 
 %% load the connectivity matrix file
 % the file should contain CM, DM, cellinfo, cellpara (for Izhikevich model)
-Data.filename = CMDMs_file;
+ConData.filename = CMDMs_file;
 try 
 %     load([CMDM_folder CMDMs_file]);
     load([CMDM_folder CMDMs_file], '-regexp',  '^(?!savefolder)\w');
 catch
+    disp('Please specify a connectivity file. It can be constructed after the example of cellinfo_newbarrel')
     keyboard
-    error('Please specify a connectivity file. It can be constructed after the example of cellinfo_newbarrel')
 end
 
 %% generate synaptic parameter matrix
@@ -358,8 +358,11 @@ end
 if includemodulationyn
 %     if isempty(dir([CMDM_folder CMDMs_file(1:end-4) '_WhiskerModulationModel.mat']))==0
 %         load([CMDM_folder CMDMs_file(1:end-4) '_WhiskerModulationModel.mat']);
-    if isempty(dir([CMDM_folder CMDMs_file '_WhiskerModulationModel.mat']))==0
-        load([CMDM_folder CMDMs_file '_WhiskerModulationModel.mat'], '-regexp',  '^(?!savefolder)\w');
+%     if isempty(dir([CMDM_folder CMDMs_file '_WhiskerModulationModel.mat']))==0
+%         load([CMDM_folder CMDMs_file '_WhiskerModulationModel.mat'], '-regexp',  '^(?!savefolder)\w');
+    if exist([CMDM_folder CMDMs_file '_WhiskerModulationModel.mat'], 'file') == 2
+        disp('Found whisker modulation model');
+        load([CMDM_folder CMDMs_file '_WhiskerModulationModel.mat']);
     else
         disp('Connectivity file does not contain direct L23 modulation by motor cortex')
         s = input('Do you want to include direct L23 modulation? (y/n)','s');
@@ -367,20 +370,41 @@ if includemodulationyn
             disp('Generating modulation data')
             s = input('Do you want to seed the rng? (y/n)', 's');
             if strcmp(s, 'y')
-                Data.modulationseed = input('Please give a seed');
-                rng(Data.modulationseed)
+                ConData.modulationseed = input('Please give a seed');
+                rng(ConData.modulationseed)
             else
                 rng('shuffle')
                 scurr = rng;
-                Data.modulationseed = scurr.Seed;
+                ConData.modulationseed = scurr.Seed;
             end
 
+            
+            % find main barrel: only cells in principal barrel are
+            % modulated
+            [Nbx, Nby] = size(barrelstruct);
+            mainbarrelfound = 0;
+            nb = 0;
+            for nbx = 1:Nbx
+                for nby = 1:Nby
+                    nb = nb+1;
+                    if barrelstruct{nbx,nby}.mainbarrel == 1
+                        mainbarrelfound = mainbarrelfound+1;
+                        mainbarrelnr = nb;
+                    end
+                end
+            end
+            if mainbarrelfound>1
+                error('Multiple main barrels')
+            elseif mainbarrelfound==0
+                error('No main barrel defined')
+            end
+            
             Midx = [];
-            idx = find(cellinfo_All(:,4)>4 & cellinfo_All(:,3)<430/3); %L2 cells
+            idx = find((cellinfo_All(:,5) == mainbarrelnr) & ((cellinfo_All(:,4)>4) & (cellinfo_All(:,3)<430/3))); %L2 cells
             tidx = randperm(length(idx));
             tidx = idx(tidx(1:round(0.2*length(idx))));
             Midx = tidx;
-            idx = find(cellinfo_All(:,4)>4 & cellinfo_All(:,3)>=430/3); %L3 cells
+            idx = find((cellinfo_All(:,5) == mainbarrelnr) & ((cellinfo_All(:,4)>4) & (cellinfo_All(:,3)>=430/3))); %L3 cells
             tidx = randperm(length(idx));
             tidx = idx(tidx(1:round(0.9*length(idx))));
             Midx = [Midx; tidx];
@@ -394,55 +418,56 @@ if includemodulationyn
             WhMod.k(cellinfo_All(:,4) == 10) = 0;
             WhMod.Pha0 = Pha0;
 %             save([CMDM_folder CMDMs_file(1:end-4) '_WhiskerModulationModel.mat'], 'WhMod','modulationseed');
+            modulationseed = ConData.modulationseed;
             save([CMDM_folder CMDMs_file '_WhiskerModulationModel.mat'], 'WhMod','modulationseed');
         end
     end
 end
 %%
-Data.FnametoSave = fname;
-Data.savefolder = savefolder;
-Data.PMat_IntoAll = PMat_IntoAll;
-Data.PMat_AlltoAll = PMat_AlltoAll;
-Data.Neuron_Para = Neuron_Para;
-Data.Neuron_Vt = thresh;
-Data.Cellinfo_In = cellinfo_In;
-Data.Cellinfo_All = cellinfo_All;
+ConData.FnametoSave = fname;
+ConData.savefolder = savefolder;
+ConData.PMat_IntoAll = PMat_IntoAll;
+ConData.PMat_AlltoAll = PMat_AlltoAll;
+ConData.Neuron_Para = Neuron_Para;
+ConData.Neuron_Vt = thresh;
+ConData.Cellinfo_In = cellinfo_In;
+ConData.Cellinfo_All = cellinfo_All;
 if isnumeric(P.InputLabel)
-    Data.InputLabel = num2str(P.InputLabel);
+    ConData.InputLabel = num2str(P.InputLabel);
 elseif ischar(P.InputLabel)
-    Data.InputLabel = P.InputLabel;
+    ConData.InputLabel = P.InputLabel;
 end
+
 if exist('WhMod', 'var')
-    Data.WhiskModel = WhMod;
-    Data.WhiskModel.k(cellinfo_All(:,5)~=1) = 0;
+    ConData.WhiskModel = WhMod;
 end
 
 %% number of cells in each group, i.e. input and simulated
-NIn = size(Data.Cellinfo_In, 1);
+NIn = size(ConData.Cellinfo_In, 1);
 NtIn = [];
-Nt = unique(Data.Cellinfo_In(:,4));
+Nt = unique(ConData.Cellinfo_In(:,4));
 for i = 1:length(Nt)
-    NtIn(Nt(i)) = length(find(Data.Cellinfo_In(:,4) == Nt(i)));
+    NtIn(Nt(i)) = length(find(ConData.Cellinfo_In(:,4) == Nt(i)));
 end
-NAll = size(Data.Cellinfo_All, 1);
+NAll = size(ConData.Cellinfo_All, 1);
 NtAll = [];
-Nt = unique(Data.Cellinfo_All(:,4));
+Nt = unique(ConData.Cellinfo_All(:,4));
 for i = 1:length(Nt)
-    NtAll(Nt(i)) = length(find(Data.Cellinfo_All(:,4) == Nt(i)));
+    NtAll(Nt(i)) = length(find(ConData.Cellinfo_All(:,4) == Nt(i)));
 end
 
-Data.NIn = NIn;
-Data.NtIn = NtIn;
-Data.NAll = NAll;
-Data.NtAll = NtAll;
-Data.Nt = Nt;
+ConData.NIn = NIn;
+ConData.NtIn = NtIn;
+ConData.NAll = NAll;
+ConData.NtAll = NtAll;
+ConData.Nt = Nt;
 
 %% Save
-a = exist(Data.savefolder, 'dir');
+a = exist(ConData.savefolder, 'dir');
 if ~(a==7) 
-    mkdir(Data.savefolder)
+    mkdir(ConData.savefolder)
 end
 % save([savefolder CMDMs_file(1:end-4) '_ConData.mat'], 'Data');
-save([savefolder CMDMs_file '_ConData.mat'], 'Data');
+save([savefolder CMDMs_file '_ConData.mat'], 'ConData');
 
 

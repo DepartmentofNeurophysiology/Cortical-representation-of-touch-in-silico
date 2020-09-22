@@ -1,4 +1,4 @@
-function plot_simulation(Nsim, initdata, ConData, varargin)
+function plot_simulation(Nsim, initdata, ConData, savename_input, varargin)
 % Loads the results of simulations, and plots
 % INPUT:
 % * initdata: structure with initial settings, in '-filename--_initialsettings.mat';
@@ -46,7 +46,7 @@ for nt = 1:Nsim
             thresholdname = 'fixthreshold_set';
         end
         load([ConData.savefolder ConData.FnametoSave '_Simcolumn_' thresholdname '_' initdata.setVthres.type '_simulation_' num2str(simvec(nt))  ]);
-        load([ConData.savefolder ConData.FnametoSave '_Thalamic_Spike_Trains.mat'  ]);
+        load([ConData.savefolder savename_input '_Thalamic_Spike_Trains.mat'  ]);
     catch
         if nt>1
             keyboard
@@ -107,9 +107,17 @@ for nt = 1:Nsim
 
         plot(time, V(ind_barrel(neuronlist(nn)),:))
         hold all
-        plot(time,U(ind_barrel(neuronlist(nn)),:))
+        try
+            plot(time,U(ind_barrel(neuronlist(nn)),:))
+        catch
+            disp('Parameter U not saved')
+        end
         if initdata.Vthresdyn
-            plot(time, VT(ind_barrel(neuronlist(nn)),:))
+            try
+                plot(time, VT(ind_barrel(neuronlist(nn)),:))
+            catch
+                disp('Parameter V_T not saved')
+            end
             legend('V', 'u','V_T')
         else
             legend('V', 'u')

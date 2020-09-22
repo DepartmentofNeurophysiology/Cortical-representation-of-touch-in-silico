@@ -1,4 +1,4 @@
-function run_trials(networkData, initdata, simdata, inputspikes, seeds, varargin)
+function run_trials(networkData, initdata, simdata, inputspikes, seeds, WhPara, varargin)
 % run_save_trials:
 % * iterates over the conditions (Vrest, Vthreshold, V0, u0, # iterations per condition) and runs the simulation
 
@@ -17,6 +17,8 @@ function run_trials(networkData, initdata, simdata, inputspikes, seeds, varargin
 % (same size as iterations, seed for initial conditions); runseed = array
 % (same size as iterations, seed for running: synaptic failures and
 % amplitude)
+% * WhPara: structure with the input for direct whisker modulation for each
+% trial 
 
 if isfield(simdata, 'inputvec')
     if ~isempty(simdata.inputvec)
@@ -68,6 +70,11 @@ for lp_ipspikes = inputvec
                         nsim = nsim+1;
                         
                         inputspikes_now = inputspikes{lp_ipspikes};
+                        if isempty(WhPara)
+                            WhPara_thissim = [];
+                        else
+                            WhPara_thissim = WhPara{lp_nit};
+                        end
 
                         [Ninst, ~] = size(inputspikes_now);
                         if ~(Ninst == networkData.NIn)
@@ -136,9 +143,12 @@ for lp_ipspikes = inputvec
                                 seeds.runseed(nsim)  = seeds_thissim.runseed;
 
                             end
-                            simcolumn_indtrial(networkData, initdata_thissim, simdata_thissim, inputspikes_now, seeds_thissim);
+                            % NB STDP changes the connectivity. The last
+                            % version of the connectivity is stored in
+                            % networkData and given back
+                            networkData = simcolumn_indtrial(networkData, initdata_thissim, simdata_thissim, inputspikes_now, seeds_thissim, WhPara_thissim);
                         else
-                            simcolumn_indtrial(networkData, initdata_thissim, simdata_thissim, inputspikes_now);
+                            networkData = simcolumn_indtrial(networkData, initdata_thissim, simdata_thissim, inputspikes_now, [], WhPara_thissim);
                         end
 
                         close;

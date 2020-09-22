@@ -1,4 +1,4 @@
-function [ lummat, calcmat ] = simulation_to_calcium(Para, savefolder, savename, initdata, Nsim, varargin)
+function [ lummat, calcmat ] = simulation_to_calcium(CalciumPara, savefolder, savename, initdata, Nsim, varargin)
 % Loads the results of simulations, and generates calcium and luminescence
 % data
 % INPUT:
@@ -44,7 +44,7 @@ else
 end
 
 %% Preallocate
-Nlumtime = ceil(Para.tmax*Para.frame_rate_c);
+Nlumtime = ceil(CalciumPara.tmax*CalciumPara.frame_rate_c);
 
 %% Loop over sims and cells to calculate calcium traces
 for ns = 1:Nsim
@@ -55,17 +55,17 @@ for ns = 1:Nsim
     calcmat = zeros(NAll, Nlumtime+1);
     for nn = 1:NAll
         if nn==1
-            [calcmat_temp, lummat_temp, ~] = spike_train_to_calc_lum(modelspt(nn,:), Para);
+            [calcmat_temp, lummat_temp, ~] = spike_train_to_calc_lum(modelspt(nn,:), CalciumPara);
             Nlumtime = length(lummat_temp);
             calcmat(nn,1:Nlumtime) = calcmat_temp;
             lummat(nn,1:Nlumtime) = lummat_temp;  
             lummat = lummat(:, 1:Nlumtime);
             calcmat = calcmat(:, 1:Nlumtime);
         else
-            [calcmat(nn,:), lummat(nn,:), ~] = spike_train_to_calc_lum(modelspt(nn,:), Para);
+            [calcmat(nn,:), lummat(nn,:), ~] = spike_train_to_calc_lum(modelspt(nn,:), CalciumPara);
         end
     end
-    save([savefolder savename '_Simcolumn_' thresholdname '_' initdata.setVthres.type '_simulation_' num2str(simvec(ns)) '_calciumdata'],'lummat', 'calcmat', 'Para', 'simvec','-v7.3')
+    save([savefolder savename '_Simcolumn_' thresholdname '_' initdata.setVthres.type '_simulation_' num2str(simvec(ns)) '_calciumdata'],'lummat', 'calcmat', 'CalciumPara', 'simvec','-v7.3')
 end
 
 

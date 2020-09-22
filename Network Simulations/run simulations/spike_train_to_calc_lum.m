@@ -73,17 +73,22 @@ for nt = 1:NT
 end
 
 %% Plot for checking
+% if max(spiketimes)>0
+%     keyboard
+% end
 if plotyn
     time = (0:NT)*bin_c;
     figure
-    plot(spiketimes, 50+ones(size(spiketimes)),'.')
+    subplot(2,1,1)
+    plot(spiketimes, max(calc)+ones(size(spiketimes)),'*')
     hold all
     plot(time, calc)
+    legend('spikes','calcium')
+    subplot(2,1,2)
     plot(time, lum)
     xlabel('time')
-    legend('spikes','calcium','luminescence')
+    title('\Delta F / F')
     ax = gca;
     ax.XTick = (1:NT)*bin_c;
     grid on
-
 end
