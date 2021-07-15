@@ -3,7 +3,7 @@ function Axondist = simcolumn_connectivity_AxonFunc(Ref_point, AxonPara, X, Y, Z
 % AxonPara is determined by function simcolumn_connectivity_assignDenAxon
 % Ref_point is the zero point on which the distribution is calculated
 
-global Model_Space;
+% global Model_Space;
 
 % stepsize = Model_Space.stepsize;
 % keyboard

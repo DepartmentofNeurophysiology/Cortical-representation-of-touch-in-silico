@@ -1,7 +1,8 @@
 function Neuron = simcolumn_connectivity_mapNeuronType(Neuron)
 % map numeric name and text-based name of each type of cell 
 
-global Model_Space;
+% global Model_Space;
+Model_Space = make_Model_Space();
 
 % type of cells in layer 2/3
 if Neuron.Layer == 2

@@ -4,7 +4,8 @@ function Neuron = simcolumn_connectivity_maxConn(Neuron)
 % model region
 % calculate percentage of axon and dendrite in the model space
 
-global Model_Space;
+% global Model_Space;
+Model_Space = make_Model_Space();
 
 step_size = Model_Space.stepsize;
 row = Model_Space.row;

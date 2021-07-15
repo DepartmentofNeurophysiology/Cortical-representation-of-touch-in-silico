@@ -4,7 +4,8 @@ function [CM, DM] = simcolumn_connectivity_L4toL23Conn(preCells, postCells)
 
 % first calcualte Axon/Dendrite overlapping for each potential presynaptic
 % neurons, for a given post synaptic cell
-global Model_Space;
+% global Model_Space;
+Model_Space = make_Model_Space();
 step_size = Model_Space.stepsize;
 
 AxonDendOverlap = zeros(length(postCells), length(preCells));

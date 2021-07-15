@@ -68,7 +68,7 @@ save([savefolder 'cellinfo_' savename])
 %% calculate connectivity matrix
 disp('Calculating connectivity matrix')
 % load model space
-Model_Space;
+Model_Space = make_Model_Space();
 % generate neuron groups
 disp('Create neuron groups')
 disp('L4')

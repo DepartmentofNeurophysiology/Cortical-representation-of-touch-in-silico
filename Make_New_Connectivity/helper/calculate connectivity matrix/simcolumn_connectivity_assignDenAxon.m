@@ -11,8 +11,8 @@ function Neuron = simcolumn_connectivity_assignDenAxon(Neuron)
 % maximum number of connections need to be set specificially for each type
 % of pre- and post- synaptic neurons
 
-global Model_Space;
-
+% global Model_Space;
+Model_Space = make_Model_Space();
 L2 = Model_Space.L2;
 L4 = Model_Space.L4;
 Loca = Neuron.Loca; % location of cell soma
