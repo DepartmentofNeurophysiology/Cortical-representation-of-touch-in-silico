@@ -3,9 +3,9 @@ function Denddist = simcolumn_connectivity_DendFunc(Ref_point, DendPara, X, Y, Z
 % AxonPara is determined by function simcolumn_connectivity_assignDenAxon
 % Ref_point is the zero point on which the distribution is calculated
 
-global Model_Space;
+% Model_Space = make_Model_Space();
 
-stepsize = Model_Space.stepsize;
+% stepsize = Model_Space.stepsize;
 
 % [X, Y, Z] = meshgrid(-800:stepsize:800, -800:stepsize:800, -1000:stepsize:1000);
 DendCenter = DendPara(1:3);
