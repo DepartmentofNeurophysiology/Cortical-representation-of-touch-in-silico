@@ -3,6 +3,7 @@ Biologically inspired, computationally efficient network model of the somatosens
 The model was used in the following two preprints:
 * Huang, C., Englitz, B., Reznik, A., Zeldenrust, F., & Celikel, T. (2020). Information transfer and recovery for the sense of touch. BioRxiv, 2020.12.08.415729. https://doi.org/10.1101/2020.12.08.415729
 * Huang, C., Zeldenrust, F., & Celikel, T. (2020). Cortical representation of touch in silico. BioRxiv. https://doi.org/10.1101/371252
+
 Please cite the second paper when using this model.
 
 ## About
