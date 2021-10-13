@@ -43,21 +43,21 @@ u0 = 0
 ###############################################################################
 Ncells = Cellinfo_All.shape[0]
 Npops = int(max(np.unique(Cellinfo_All[0:Ncells,3])))
-Pops = {'1':{'Label':'Pyr_SP',  'Layer':'l4',  'Type':'exc'},
-        '2':{'Label':'Pyr_SS',  'Layer':'l4',  'Type':'exc'},
-        '3':{'Label':'Inh_FS',   'Layer':'l4',  'Type':'inh'},
-        '4':{'Label':'Inh_RSNP', 'Layer':'l4',  'Type':'inh'},
-        '5':{'Label':'Pyr',  'Layer':'l23', 'Type':'exc'},
-        '6':{'Label':'Inh_FSBS', 'Layer':'l23', 'Type':'inh'},   # PV
-        '7':{'Label':'Inh_FSCH', 'Layer':'l23', 'Type':'inh'},   # PV
-        '8':{'Label':'Inh_BSPV', 'Layer':'l23', 'Type':'inh'},   # PV
-        '9':{'Label':'Inh_Mar',  'Layer':'l23', 'Type':'inh'},   # SOM
-        '10':{'Label':'Inh_Bit', 'Layer':'l23', 'Type':'inh'},   # SOM
-        '11':{'Label':'Inh_DBC', 'Layer':'l23', 'Type':'inh'},   # VIP
-        '12':{'Label':'Inh_Bip', 'Layer':'l23', 'Type':'inh'},   # VIP
-        '13':{'Label':'Inh_Bip', 'Layer':'l23', 'Type':'inh'},   # CR
-        '14':{'Label':'Inh_SBC', 'Layer':'l23', 'Type':'inh'},   # CR
-        '15':{'Label':'Inh_NG',  'Layer':'l23', 'Type':'inh'}}   # AC
+Pops = {'1':{'Label':'Pyr_SP',  'Layer':'l4',  'Type':'exc', 'Neuron_Vt':{}},
+        '2':{'Label':'Pyr_SS',  'Layer':'l4',  'Type':'exc', 'Neuron_Vt':{}},
+        '3':{'Label':'Inh_FS',   'Layer':'l4',  'Type':'inh', 'Neuron_Vt':{}},
+        '4':{'Label':'Inh_RSNP', 'Layer':'l4',  'Type':'inh', 'Neuron_Vt':{}},
+        '5':{'Label':'Pyr',  'Layer':'l23', 'Type':'exc', 'Neuron_Vt':{}},
+        '6':{'Label':'Inh_FSBS', 'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # PV
+        '7':{'Label':'Inh_FSCH', 'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # PV
+        '8':{'Label':'Inh_BSPV', 'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # PV
+        '9':{'Label':'Inh_Mar',  'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # SOM
+        '10':{'Label':'Inh_Bit', 'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # SOM
+        '11':{'Label':'Inh_DBC', 'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # VIP
+        '12':{'Label':'Inh_Bip', 'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # VIP
+        '13':{'Label':'Inh_Bip', 'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # CR
+        '14':{'Label':'Inh_SBC', 'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}},   # CR
+        '15':{'Label':'Inh_NG',  'Layer':'l23', 'Type':'inh', 'Neuron_Vt':{}}}   # AC
 
 N = [[n for n in range(Ncells) if Cellinfo_All[n,3]==(ntype+1)] for ntype in range(Npops)]
 
