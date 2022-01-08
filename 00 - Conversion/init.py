@@ -1,5 +1,5 @@
 import settings, reading, assemble
-import netPars, simCfg, netModify, multitrial
+import netParams, cfg, netModify, multitrial
 from netpyne import sim
 
 ## Setting-up, initial conditions, options
@@ -15,8 +15,8 @@ Ncells, Npops, N, Pops = assemble.define_pops(inst_model, Settings)
 Exc_ThtoAll, Exc_AlltoAll, Inh_AlltoAll  = assemble.define_conns(inst_model, Settings)
 
 ## NetPyNE specifications
-netParams = netPars.set_netParams(Nthalamic, Pops, Exc_ThtoAll, Exc_AlltoAll, Inh_AlltoAll)
-simConfig = simCfg.set_cfg(Input)
+netParams = netParams.set_netParams(Nthalamic, Pops, Exc_ThtoAll, Exc_AlltoAll, Inh_AlltoAll)
+simConfig = cfg.set_cfg(Input,Nbarrels)
 
 # Create the network with a generic synaptic mechanism
 sim.create(netParams = netParams, simConfig = simConfig, output=True)
