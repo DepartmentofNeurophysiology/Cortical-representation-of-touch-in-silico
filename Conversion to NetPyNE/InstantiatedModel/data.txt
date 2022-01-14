@@ -1,0 +1,6 @@
+put here data from Donders Repository. For example:
+
+CMDMs_forNetPyNe1.mat
+CMDMs_forNetPyNe1_ConData.mat
+
+from the 1 barrel's network intantiations
