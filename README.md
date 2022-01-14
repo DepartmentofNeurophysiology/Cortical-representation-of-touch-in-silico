@@ -6,6 +6,8 @@ The model was used in the following two preprints:
 
 Please cite the second paper when using this model.
 
+A NetPyNE (http://www.netpyne.org/) implementation can be found in this repository: https://github.com/DepartmentofNeurophysiology/Cortical-representation-of-touch-in-silico-NetPyne
+
 ## About
 
 Simulation of one or more barrel cortical columns. The model is a biologically inspired, computationally efficient network model of  somatosensory cortical columns. It was created by (1) reconstructing the barrel cortex in soma resolution using multi-channel mosaic scanning confocal microscopy, (2) defining a mathematical model (Izhikevich model [1]) of cortical neurons whose action potential threshold adapts to the rate of ongoing network activity impinging onto the postsynaptic neuron and (3) connecting each neuron in the network using statistical rules of pair-wise connectivity based on experimental observations. The input consists of whisker data (here: angle and curvature, but other metrics such as deviation from baseline are also possible). Based on this, thalamic spike trains are generated (thalamic neurons are considered simple filter-and-fire Poisson neurons), that then form the input to the cortical model. 
