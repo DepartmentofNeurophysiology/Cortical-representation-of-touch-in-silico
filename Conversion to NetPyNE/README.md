@@ -1,0 +1,1 @@
+A detailed explanation of the NetPyNE implementation can be found in the folder "Documentation"
