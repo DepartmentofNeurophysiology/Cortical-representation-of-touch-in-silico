@@ -2,7 +2,7 @@
 Biologically inspired, computationally efficient network model of the somatosensory cortex after reconstructing the mouse barrel cortex in soma resolution and defining a mathematical model of cortical neurons whose action potential threshold adapts to the rate of ongoing network activity impinging onto the postsynaptic neuron. 
 The model was used in the following two preprints:
 * Huang, C., Englitz, B., Reznik, A., Zeldenrust, F., & Celikel, T. (2020). Information transfer and recovery for the sense of touch. BioRxiv, 2020.12.08.415729. https://doi.org/10.1101/2020.12.08.415729
-* Huang, C., Zeldenrust, F., & Celikel, T. (2020). Cortical representation of touch in silico. BioRxiv. https://doi.org/10.1101/371252
+* Huang, C., Zeldenrust, F., & Celikel, T. (2020). Cortical representation of touch in silico. Neuroinformatics. https://doi.org/10.1007/s12021-022-09576-5
 
 Please cite the second paper when using this model.
 
